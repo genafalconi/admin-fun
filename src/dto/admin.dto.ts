@@ -4,19 +4,15 @@ import { Subproduct } from 'src/schemas/subprod.schema';
 import { Buy } from 'src/schemas/buy.schema';
 import { PopulateObject, UserFullData } from './populate.interface';
 import { Product } from 'src/schemas/product.schema';
+import { Expense } from 'src/schemas/expense.schema';
 
 export class SellData {
   date: Date;
-  user: UserDto;
+  user: string;
   address_id: string;
   products: Array<ProductDto>;
   total_sell: number;
   payment_type: PaymentType;
-}
-
-export class UserDto {
-  user_id: string;
-  address_id: string;
 }
 
 export class ProductDto {
@@ -77,7 +73,7 @@ export class ResponseData {
 }
 
 export class PaginatedData {
-  movements: Array<Order | Buy | UserFullData | Subproduct | Product>;
+  movements: Array<Order | Buy | UserFullData | Subproduct | Product | Expense>;
   total_movements: number;
   page: number;
   total_pages: number;
@@ -114,6 +110,19 @@ export enum OrderStatusDto {
   DELIVERED = 'DELIVERED',
   PROGRESS = 'PROGRESS',
   CANCELLED = 'CANCELLED',
+}
+
+export class ExpenseData {
+  date: Date
+  type: ExpenseTypeDto
+  total: number
+  description: string
+}
+
+export enum ExpenseTypeDto {
+  FUEL = 'FUEL',
+  SALARY = 'SALARY',
+  OTHER = 'OTHER'
 }
 
 export const OrderPopulateOptions: Array<PopulateObject> = [
