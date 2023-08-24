@@ -14,9 +14,10 @@ import { AdminModule } from './admin/admin.module';
         uri: config.get('MONGO_DB'),
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        maxPoolSize: 30,
+        maxPoolSize: 10,
         retryAttempts: 2,
         retryDelay: 1000,
+        maxIdleTimeMS: 5000
       }),
       inject: [ConfigService],
     }),

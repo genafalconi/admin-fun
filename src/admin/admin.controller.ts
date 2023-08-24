@@ -3,6 +3,7 @@ import { AdminService } from './admin.service';
 import {
   BuyData,
   DeliveryDto,
+  ExpenseData,
   PaginatedData,
   ReportDto,
   ResponseData,
@@ -14,7 +15,7 @@ import { User } from 'src/schemas/user.schema';
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) { }
 
   @Post('/manual-sell')
   async createSellByClient(@Body() sellData: SellData): Promise<ResponseData> {
@@ -29,6 +30,11 @@ export class AdminController {
   @Post('/manual-client')
   async createClient(@Body() userData: UserData): Promise<ResponseData> {
     return await this.adminService.createClientAndAddress(userData);
+  }
+
+  @Post('/manual-expense')
+  async createExpense(@Body() expenseData: ExpenseData): Promise<ResponseData> {
+    return await this.adminService.createExpense(expenseData);
   }
 
   @Get('/search/product-movement')
@@ -66,10 +72,13 @@ export class AdminController {
   }
 
   @Get('/products')
-  async getPaginatedProducts(
-    @Query('page') page: string,
-  ): Promise<PaginatedData> {
+  async getPaginatedProducts(@Query('page') page: string): Promise<PaginatedData> {
     return await this.adminService.getPaginatedProducts(parseInt(page));
+  }
+
+  @Get('/expenses')
+  async getPaginatedExpenses(@Query('page') page: string): Promise<PaginatedData> {
+    return await this.adminService.getPaginatedExpenses(parseInt(page));
   }
 
   @Get('/report-buys')

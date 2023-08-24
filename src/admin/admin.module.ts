@@ -13,6 +13,7 @@ import { Order, OrderSchema } from 'src/schemas/order.schema';
 import { Buy, BuySchema } from 'src/schemas/buy.schema';
 import { AdminAtomicController } from './admin.atomic.controller';
 import { AdminAtomicService } from './admin.atomic.service';
+import { Expense, ExpenseSchema } from 'src/schemas/expense.schema';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AdminAtomicService } from './admin.atomic.service';
       { name: Offer.name, schema: OfferSchema },
       { name: Order.name, schema: OrderSchema },
       { name: Buy.name, schema: BuySchema },
+      { name: Expense.name, schema: ExpenseSchema }
     ]),
   ],
   controllers: [AdminController, AdminAtomicController],

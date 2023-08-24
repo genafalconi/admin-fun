@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { PaymentType, StatusOrder } from '../dto/types.dto';
 import { Subproduct } from './subprod.schema';
 
 @Schema({ timestamps: true })
@@ -24,6 +23,9 @@ export class Buy extends Document {
 
   @Prop({ required: true })
   total_buy: number;
+
+  @Prop({ default: false })
+  discount: boolean;
 }
 
 export const BuySchema = SchemaFactory.createForClass(Buy);

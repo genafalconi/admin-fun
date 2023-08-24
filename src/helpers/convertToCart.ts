@@ -18,7 +18,7 @@ export function convertSellDataToCart(
     bought: true,
     total_products: sellData.products.length,
     total_price: sellData.total_sell,
-    user: new Types.ObjectId(sellData.user.user_id),
+    user: new Types.ObjectId(sellData.user),
   });
 
   return cart;

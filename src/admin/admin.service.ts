@@ -6,6 +6,7 @@ import {
   BuyPopulateOptions,
   DeliveryDto,
   DeliveryPopulateOptions,
+  ExpenseData,
   OrderPopulateOptions,
   PaginatedData,
   ReportDto,
@@ -22,6 +23,7 @@ import { convertSellDataToOffer } from 'src/helpers/convertToOffer';
 import { Address } from 'src/schemas/address.schema';
 import { Buy } from 'src/schemas/buy.schema';
 import { Cart } from 'src/schemas/cart.schema';
+import { Expense } from 'src/schemas/expense.schema';
 import { Offer } from 'src/schemas/offers.schema';
 import { Order } from 'src/schemas/order.schema';
 import { Product } from 'src/schemas/product.schema';
@@ -47,7 +49,9 @@ export class AdminService {
     private readonly offerModel: Model<Offer>,
     @InjectModel(Buy.name)
     private readonly buyModel: Model<Buy>,
-  ) {}
+    @InjectModel(Expense.name)
+    private readonly expenseModel: Model<Expense>,
+  ) { }
 
   async createClientSell(sellData: SellData): Promise<ResponseData> {
     const response: ResponseData = {
@@ -64,9 +68,9 @@ export class AdminService {
     ]);
 
     const newSell = new this.orderModel({
-      user: new Types.ObjectId(sellData.user.user_id),
+      user: new Types.ObjectId(sellData.user),
       cart: new Types.ObjectId(savedCart._id),
-      address: new Types.ObjectId(sellData.user.address_id),
+      address: new Types.ObjectId(sellData.address_id),
       offer: new Types.ObjectId(offerSell._id),
       payment_type: sellData.payment_type,
       ecommerce: false,
@@ -75,7 +79,7 @@ export class AdminService {
     const [createSell, userUpdate, sellSaved] = await Promise.all([
       await this.orderModel.create(newSell),
       await this.userModel.updateOne(
-        { _id: sellData.user.user_id },
+        { _id: sellData.user },
         { $push: { orders: newSell._id } },
       ),
       await this.orderModel
@@ -124,7 +128,7 @@ export class AdminService {
   async paginatedMovements(
     params: any,
     page = 1,
-    model: Model<Order | Buy>,
+    model: Model<Order | Buy | Expense>,
     populates: Array<PopulateObject>,
   ): Promise<PaginatedData> {
     const movementsPerPage = 10;
@@ -203,6 +207,7 @@ export class AdminService {
       total_buy: buyData.discount
         ? buyData.total_sell * 0.95
         : buyData.total_sell,
+      discount: buyData.discount ? true : false
     });
 
     const [createBuy, buySaved] = await Promise.all([
@@ -235,6 +240,15 @@ export class AdminService {
       page,
       this.buyModel,
       BuyPopulateOptions,
+    );
+  }
+
+  async getPaginatedExpenses(page = 1): Promise<PaginatedData> {
+    return await this.paginatedMovements(
+      null,
+      page,
+      this.expenseModel,
+      null
     );
   }
 
@@ -458,22 +472,25 @@ export class AdminService {
         .select('_id createdAt payment_type ecommerce cart'),
     ]);
 
-    const totalSells = sells.reduce((total, sell) => {
-      return total + sell.cart['total_price'];
-    }, 0);
+    let totalSells: number = 0, totalProfit: number = 0
+    if (sells.length > 0) {
+      totalSells = sells.reduce((total, sell) => {
+        return total + sell.cart['total_price'];
+      }, 0);
 
-    const totalProfit = sells.reduce((sum, item) => {
-      if (item.cart && item.cart['subproducts']) {
-        const subproductProfit = item.cart['subproducts'].reduce(
-          (subSum, subitem) => {
-            return subSum + subitem.profit;
-          },
-          0,
-        );
-        return sum + subproductProfit;
-      }
-      return sum;
-    }, 0);
+      totalProfit = sells.reduce((sum, item) => {
+        if (item.cart && item.cart['subproducts']) {
+          const subproductProfit = item.cart['subproducts'].reduce(
+            (subSum, subitem) => {
+              return subSum + subitem.profit;
+            },
+            0,
+          );
+          return sum + subproductProfit;
+        }
+        return sum;
+      }, 0);
+    }
 
     responseReport.movements = sells;
     responseReport.total_import = totalSells;
@@ -557,4 +574,28 @@ export class AdminService {
 
     return userReports;
   }
+
+  async createExpense(expenseData: ExpenseData): Promise<ResponseData> {
+    const response: ResponseData = {
+      success: false,
+      data: ''
+    };
+    const newExpense = new this.expenseModel({
+      date: expenseData.date,
+      type: expenseData.type,
+      total: expenseData.total,
+      description: expenseData.description
+    })
+
+    const [created, expenses] = await Promise.all([
+      this.expenseModel.create(newExpense),
+      this.expenseModel.find()
+    ])
+    
+    response.data = expenses
+    if (created) response.success = true
+
+    return response
+  }
+
 }
