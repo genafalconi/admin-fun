@@ -1,5 +1,5 @@
 import { Order } from 'src/schemas/order.schema';
-import { PaymentType } from './types.dto';
+import { AnimalAgeDto, AnimalDto, AnimalSizeDto, BrandDto, CategoryDto, PaymentType } from './types.dto';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { Buy } from 'src/schemas/buy.schema';
 import { PopulateObject, UserFullData } from './populate.interface';
@@ -20,6 +20,29 @@ export class ProductDto {
   quantity: number;
   subprod_id: Subproduct;
   profit: number;
+}
+
+export class ProductDataDto {
+  name: string
+  image: string
+  description: string
+  animal: AnimalDto
+  animal_age: AnimalAgeDto
+  brand: BrandDto
+  category: CategoryDto
+}
+
+export class SubproductDataDto {
+  product: string
+  buy_price: number
+  sell_price: number
+  size: number
+  stock: number
+  animal: AnimalDto
+  animal_age: AnimalAgeDto
+  brand: BrandDto
+  category: CategoryDto
+  animal_size: AnimalSizeDto
 }
 
 export class BuyData {
@@ -93,6 +116,11 @@ export class UserReportDto {
   re_buy: Date;
   total_buys: number;
   last_buy: Date;
+}
+
+export class UpdateUserBuyDto {
+  user: string;
+  next_buy: number;
 }
 
 export class WeekDto {

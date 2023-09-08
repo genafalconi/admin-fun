@@ -54,3 +54,18 @@ export enum PaymentType {
   MP = 'MP',
   TRANSFERENCIA = 'TRANSFERENCIA',
 }
+
+export class LandingDto {
+  image: string
+  type: LandingType
+  name: string
+  text: string
+  active?: boolean
+  id?: string
+}
+
+export enum LandingType {
+  CAROUSEL = 'CAROUSEL',
+  INFO = 'INFO',
+  PROMO = 'PROMO'
+}

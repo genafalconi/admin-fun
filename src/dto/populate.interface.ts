@@ -12,4 +12,19 @@ export interface PopulateObject {
 export interface UserFullData extends User {
   last_address?: Address;
   last_order?: Order;
+  next_buy?: Date;
+}
+
+export class UserFullDataDto {
+  _id: string
+  email: string
+  full_name: string
+  active: boolean
+  admin: boolean
+  phone: string
+  provider_login: string
+  firebase_id: string
+  last_address?: Address
+  last_order?: Order
+  next_buy?: Date
 }
