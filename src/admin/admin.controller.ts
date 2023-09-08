@@ -1,17 +1,24 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import {
   BuyData,
   DeliveryDto,
   ExpenseData,
   PaginatedData,
+  ProductDataDto,
   ReportDto,
   ResponseData,
   SellData,
+  SubproductDataDto,
   UserData,
+  UserReportDto,
 } from 'src/dto/admin.dto';
 import { Product } from 'src/schemas/product.schema';
 import { User } from 'src/schemas/user.schema';
+import { LandingDto, LandingType } from 'src/dto/types.dto';
+import { Landing } from 'src/schemas/landing.schema';
+import { Subproduct } from 'src/schemas/subprod.schema';
+import { async } from 'rxjs';
 
 @Controller('admin')
 export class AdminController {
@@ -38,9 +45,7 @@ export class AdminController {
   }
 
   @Get('/search/product-movement')
-  async getNonPaginateProducts(
-    @Query('input') input: string,
-  ): Promise<Product[]> {
+  async getNonPaginateProducts(@Query('input') input: string): Promise<Product[]> {
     return await this.adminService.getProductsMovementSearch(input);
   }
 
@@ -55,9 +60,7 @@ export class AdminController {
   }
 
   @Get('/orders')
-  async getPaginatedOrders(
-    @Query('page') page: string,
-  ): Promise<PaginatedData> {
+  async getPaginatedOrders(@Query('page') page: string): Promise<PaginatedData> {
     return await this.adminService.getPaginatedOrders(parseInt(page));
   }
 
@@ -73,7 +76,7 @@ export class AdminController {
 
   @Get('/products')
   async getPaginatedProducts(@Query('page') page: string): Promise<PaginatedData> {
-    return await this.adminService.getPaginatedProducts(parseInt(page));
+    return await this.adminService.getPaginatedProducts(parseInt(page), null);
   }
 
   @Get('/expenses')
@@ -92,7 +95,47 @@ export class AdminController {
   }
 
   @Get('/report-users')
-  async getUserReport(): Promise<any> {
+  async getUserReport(): Promise<UserReportDto[]> {
     return await this.adminService.getUsersReport();
+  }
+
+  @Get('/product-search')
+  async getProductSearch(@Query('page') page: string, @Query('text') text: string): Promise<PaginatedData> {
+    return await this.adminService.getSearchedProducts(parseInt(page), text)
+  }
+
+  @Get('/landing-images')
+  async getLandingImages(@Query('type') type?: LandingType): Promise<Landing[]> {
+    return await this.adminService.getLandingImages(type)
+  }
+
+  @Put('/change-image')
+  async changeLandingImage(@Body() landing: LandingDto): Promise<Landing> {
+    return await this.adminService.changeLandingImage(landing)
+  }
+
+  @Post('/create-image')
+  async addLandingImage(@Body() landing: LandingDto): Promise<Landing> {
+    return await this.adminService.addLandingImage(landing)
+  }
+
+  @Get('/subprod/:subprod_id')
+  async getSubproductDetails(@Param('subprod_id') subprod: string): Promise<Subproduct> {
+    return await this.adminService.getSubproduct(subprod) 
+  }
+
+  @Get('/products-excel')
+  async getProductsToExcel() {
+    return await this.adminService.getProductsToExcelFile()
+  }
+
+  @Post('/create-product')
+  async createProduct(@Body() productData: ProductDataDto): Promise<Product> {
+    return await this.adminService.createProduct(productData)
+  }
+
+  @Post('/create-subproduct')
+  async createSubproduct(@Body() subprodData: SubproductDataDto): Promise<Subproduct> {
+    return await this.adminService.createSubprodToProd(subprodData)
   }
 }

@@ -12,6 +12,9 @@ export class User extends Document {
   @Prop({ default: true })
   active: boolean;
 
+  @Prop({ default: 30 })
+  period_buy: number;
+
   @Prop({ default: false })
   admin: boolean;
 

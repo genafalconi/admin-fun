@@ -1,9 +1,11 @@
 import { Body, Controller, Put, Param, Get, Query } from '@nestjs/common';
-import { OrderStatusDto, UpdateProductDto } from 'src/dto/admin.dto';
+import { OrderStatusDto, PaginatedData, UpdateProductDto, UpdateUserBuyDto } from 'src/dto/admin.dto';
 import { AdminAtomicService } from './admin.atomic.service';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { Product } from 'src/schemas/product.schema';
 import { Order } from 'src/schemas/order.schema';
+import { User } from 'src/schemas/user.schema';
+import { UserFullDataDto } from 'src/dto/populate.interface';
 
 @Controller('admin-atomic')
 export class AdminAtomicController {
@@ -42,5 +44,15 @@ export class AdminAtomicController {
   @Get('/details/:order_id')
   async getOrderDetails(@Param('order_id') orderId: string): Promise<Order> {
     return await this.atomicService.getOrderDetails(orderId);
+  }
+
+  @Get('/product-types')
+  getProductTypes(): Object {
+    return this.atomicService.getTypesForProduct()
+  }
+
+  @Put('/next-buy')
+  async updateNextBuy(@Body() nextBuy: UpdateUserBuyDto): Promise<UserFullDataDto> {
+    return await this.atomicService.updateNextBuy(nextBuy);
   }
 }

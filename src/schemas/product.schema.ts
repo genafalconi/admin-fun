@@ -13,7 +13,7 @@ export class Product extends Document {
   @Prop({ required: false })
   name: string;
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'Subproduct' }] })
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Subproduct' }], required: false, default: [] })
   subproducts: Subproduct[];
 
   @Prop({ required: false })
@@ -31,13 +31,13 @@ export class Product extends Document {
   @Prop({ required: false })
   description: string;
 
-  @Prop({ required: false })
+  @Prop({ required: false, default: false })
   highlight: boolean;
 
   @Prop({ required: false })
   image: string;
 
-  @Prop({ required: false })
+  @Prop({ required: false, default: true })
   active: boolean;
 }
 

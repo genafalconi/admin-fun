@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { v2 as cloudinary } from 'cloudinary';
+import * as xlsx from 'xlsx';
 import { Model, Types } from 'mongoose';
 import {
   BuyData,
@@ -9,14 +11,17 @@ import {
   ExpenseData,
   OrderPopulateOptions,
   PaginatedData,
+  ProductDataDto,
   ReportDto,
   ResponseData,
   SellData,
   SellPopulateOptions,
+  SubproductDataDto,
   UserData,
   UserReportDto,
 } from 'src/dto/admin.dto';
 import { PopulateObject, UserFullData } from 'src/dto/populate.interface';
+import { LandingDto, LandingType } from 'src/dto/types.dto';
 import getStartAndEndOfWeek from 'src/helpers/actualWeekByDate';
 import { convertSellDataToCart } from 'src/helpers/convertToCart';
 import { convertSellDataToOffer } from 'src/helpers/convertToOffer';
@@ -24,6 +29,7 @@ import { Address } from 'src/schemas/address.schema';
 import { Buy } from 'src/schemas/buy.schema';
 import { Cart } from 'src/schemas/cart.schema';
 import { Expense } from 'src/schemas/expense.schema';
+import { Landing } from 'src/schemas/landing.schema';
 import { Offer } from 'src/schemas/offers.schema';
 import { Order } from 'src/schemas/order.schema';
 import { Product } from 'src/schemas/product.schema';
@@ -51,7 +57,15 @@ export class AdminService {
     private readonly buyModel: Model<Buy>,
     @InjectModel(Expense.name)
     private readonly expenseModel: Model<Expense>,
-  ) { }
+    @InjectModel(Landing.name)
+    private readonly landingModel: Model<Landing>
+  ) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUD_NAME,
+      api_key: process.env.API_KEY,
+      api_secret: process.env.API_SECRET,
+    });
+  }
 
   async createClientSell(sellData: SellData): Promise<ResponseData> {
     const response: ResponseData = {
@@ -301,7 +315,7 @@ export class AdminService {
     const [users, totalUsers] = await Promise.all([
       this.userModel
         .find()
-        .select('_id full_name phone addresses orders')
+        .select('_id full_name phone addresses orders period_buy')
         .sort({ full_name: 1 })
         .skip(skip)
         .limit(pageSize)
@@ -335,6 +349,13 @@ export class AdminService {
         userData.last_address = lastAddress;
         userData.last_order = lastOrder;
 
+        let nextBuyDate: Date
+        if (lastOrder && lastOrder['createdAt']) {
+          const lastOrderDate = new Date(lastOrder['createdAt']);
+          nextBuyDate = new Date(lastOrderDate.getTime() + user.period_buy * 24 * 60 * 60 * 1000);
+        } 
+        userData.next_buy = nextBuyDate;
+
         return userData;
       }),
     );
@@ -349,13 +370,14 @@ export class AdminService {
     };
   }
 
-  async getPaginatedProducts(page = 1): Promise<PaginatedData> {
+  async getPaginatedProducts(page = 1, params: any): Promise<PaginatedData> {
     const pageSize = 15;
     const skip = (page - 1) * pageSize;
+    const query = { active: true, ...params };
 
-    const [products, totalProducts] = await Promise.all([
+    const [products, totalProducts, totalSubproducts] = await Promise.all([
       this.productModel
-        .find()
+        .find(query)
         .select('_id name description image')
         .populate({
           path: 'subproducts',
@@ -368,14 +390,15 @@ export class AdminService {
         .limit(pageSize)
         .lean()
         .exec(),
-      this.productModel.countDocuments().exec(),
+      this.productModel.countDocuments(query).exec(),
+      this.subproductModel.countDocuments(query).exec()
     ]);
 
     const totalPages = Math.ceil(totalProducts / pageSize);
 
     return {
       movements: products,
-      total_movements: totalProducts,
+      total_movements: totalSubproducts,
       page: page,
       total_pages: totalPages,
     };
@@ -591,11 +614,155 @@ export class AdminService {
       this.expenseModel.create(newExpense),
       this.expenseModel.find()
     ])
-    
+
     response.data = expenses
     if (created) response.success = true
 
     return response
+  }
+
+  async getSearchedProducts(page: number, text: string): Promise<PaginatedData> {
+    const query = { name: { $regex: text, $options: 'i' } };
+    return await this.getPaginatedProducts(page, query)
+  }
+
+  async getLandingImages(type?: LandingType): Promise<Landing[]> {
+    const query = type && { type: type }
+    return await this.landingModel.find(query)
+  }
+
+  async changeLandingImage(landing: LandingDto): Promise<Landing> {
+    const landingImage = await this.landingModel.findById(new Types.ObjectId(landing.id))
+    await cloudinary.uploader.destroy(landingImage.image)
+
+    const uploadResult = await cloudinary.uploader.upload(landing.image, {
+      folder: `Landing/${landing.type}`,
+      use_filename: true
+    })
+    const newImageUrl = uploadResult.public_id;
+
+    landingImage.image = newImageUrl;
+
+    return await landingImage.save()
+  }
+
+  async addLandingImage(landing: LandingDto): Promise<Landing> {
+    const uploadResult = await cloudinary.uploader.upload(landing.image, {
+      folder: `Landing/${landing.type}`,
+      use_filename: true
+    })
+    const newImageUrl = uploadResult.public_id;
+
+    const newLanding = new this.landingModel({
+      image: newImageUrl,
+      type: landing.type,
+      active: true,
+      name: landing.name,
+      text: landing.text
+    })
+
+    return await newLanding.save()
+  }
+
+  async getSubproduct(subprod: string): Promise<Subproduct> {
+    return await this.subproductModel
+      .findById(new Types.ObjectId(subprod))
+      .populate('product')
+  }
+
+  async getProductsToExcelFile() {
+    const productToExport = await this.subproductModel
+      .find()
+      .populate({
+        path: 'product',
+        model: 'Product',
+        select: '_id name'
+      });
+
+    const dataForXLSX = productToExport.map(item => ({
+      _id: item._id.toString(),
+      active: item.active,
+      animal: item.animal,
+      animal_age: item.animal_age,
+      animal_size: item.animal_size,
+      brand: item.brand,
+      buy_price: item.buy_price,
+      category: item.category,
+      product_id: item.product?._id.toString(),
+      product_name: item.product?.name,
+      sell_price: item.sell_price,
+      size: item.size,
+      stock: item.stock,
+      // has_lock: item.has_lock
+    }));
+
+    const existingFilePath = "C:/Users/genar/Documents/Pets/E-commerce/ExcelProducts/Productos.xlsx";
+    const workbook = xlsx.readFile(existingFilePath);
+
+    // Access the sheet you want to update (e.g., Sheet1)
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+
+    // Update the worksheet with the new data (starting from cell A2)
+    xlsx.utils.sheet_add_json(worksheet, dataForXLSX, { origin: 'A2' });
+
+    // Step 4: Save the modified Excel file
+    const outputFilePath = 'C:/Users/genar/Documents/Pets/E-commerce/ExcelProducts/Productos.xlsx';
+
+    // Write the updated workbook to the output file
+    xlsx.writeFile(workbook, outputFilePath);
+
+    return `Data has been added to ${outputFilePath}`;
+  }
+
+  async createProduct(productData: ProductDataDto): Promise<Product> {
+    const existProd: Product = await this.productModel.findOne({ name: productData.name })
+    if (!existProd) {
+      const newProduct: Product = new this.productModel({
+        name: productData.name,
+        image: productData.image,
+        animal: productData.animal,
+        animal_age: productData.animal_age,
+        brand: productData.brand,
+        category: productData.category,
+        description: productData.description
+      })
+      const prodSaved: Product = await this.productModel.create(newProduct)
+
+      return prodSaved
+    } else {
+      return existProd
+    }
+  }
+
+  async createSubprodToProd(subprodData: SubproductDataDto): Promise<Subproduct> {
+    const existSubprod: Subproduct = await this.subproductModel.findOne({ size: subprodData.size, product: subprodData.product })
+    if (!existSubprod) {
+      const newSubproduct: Subproduct = new this.subproductModel({
+        product: new Types.ObjectId(subprodData.product),
+        buy_price: subprodData.buy_price,
+        sell_price: subprodData.sell_price,
+        size: subprodData.size,
+        stock: subprodData.stock,
+        animal: subprodData.animal,
+        animal_age: subprodData.animal_age,
+        brand: subprodData.brand,
+        category: subprodData.category,
+        animal_size: subprodData.animal_size,
+      });
+
+      const [updateProd, subprodSaved] = await Promise.all([
+        this.productModel.findByIdAndUpdate(
+          subprodData.product,
+          { $push: { subproducts: new Types.ObjectId(newSubproduct._id) } }
+        ),
+        this.subproductModel.create(newSubproduct)
+      ])
+
+      return subprodSaved
+    } else {
+      return existSubprod
+    }
   }
 
 }

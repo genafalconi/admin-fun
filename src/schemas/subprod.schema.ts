@@ -38,13 +38,13 @@ export class Subproduct extends Document {
   @Prop({ required: false })
   animal_age: AnimalAgeDto;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: true })
   active: boolean;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: 100 })
   stock: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: false })
   highlight: boolean;
 }
 
