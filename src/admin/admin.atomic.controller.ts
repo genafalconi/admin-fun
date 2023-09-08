@@ -47,7 +47,7 @@ export class AdminAtomicController {
   }
 
   @Get('/product-types')
-  getProductTypes(): Object {
+  getProductTypes(): object {
     return this.atomicService.getTypesForProduct()
   }
 

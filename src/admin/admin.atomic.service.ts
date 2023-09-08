@@ -99,7 +99,7 @@ export class AdminAtomicService {
       .populate(OrderFullDetailPopulateOptions);
   }
 
-  getTypesForProduct(): Object {
+  getTypesForProduct(): object {
     const categories: string[] = Object.keys(CategoryDto)
     const animals: string[] = Object.keys(AnimalDto)
     const animal_age: string[] = Object.keys(AnimalAgeDto)
