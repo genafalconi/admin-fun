@@ -353,7 +353,7 @@ export class AdminService {
         if (lastOrder && lastOrder['createdAt']) {
           const lastOrderDate = new Date(lastOrder['createdAt']);
           nextBuyDate = new Date(lastOrderDate.getTime() + user.period_buy * 24 * 60 * 60 * 1000);
-        } 
+        }
         userData.next_buy = nextBuyDate;
 
         return userData;
@@ -374,8 +374,13 @@ export class AdminService {
     const pageSize = 15;
     const skip = (page - 1) * pageSize;
     const query = { active: true, ...params };
+    let has_name = false
 
-    const [products, totalProducts, totalSubproducts] = await Promise.all([
+    if (query.name !== undefined) {
+      has_name = true
+    }
+
+    let [products, totalProducts, totalSubproducts] = await Promise.all([
       this.productModel
         .find(query)
         .select('_id name description image')
@@ -395,6 +400,14 @@ export class AdminService {
     ]);
 
     const totalPages = Math.ceil(totalProducts / pageSize);
+
+    if (has_name) {
+      let total: number = 0
+      products.forEach((elem) => {
+        total += elem.subproducts.length
+      })
+      totalSubproducts = total
+    }
 
     return {
       movements: products,
@@ -472,6 +485,35 @@ export class AdminService {
     return responseReport;
   }
 
+  async getExpensesReport(date?: string) {
+    let query = null;
+    const responseReport: ReportDto = {
+      movements: [],
+      total_import: 0,
+      month: '',
+    };
+
+    if (date) {
+      const { start, end, monthName } = this.getDatesFormatted(date);
+      responseReport.month = monthName;
+      query = { createdAt: { $gte: start, $lt: end } };
+    }
+
+    const [expenses] = await Promise.all([
+      this.expenseModel.find(query).select('_id date total type'),
+    ]);
+
+    const totalExpenses = expenses.reduce((total, expense) => {
+      return total + expense.total;
+    }, 0);
+
+    responseReport.movements = expenses;
+    responseReport.total_import = totalExpenses;
+    responseReport.month = responseReport.month ? responseReport.month : 'All';
+
+    return responseReport;
+  }
+
   async getSellsReport(date?: string): Promise<ReportDto> {
     let query = null;
     const responseReport: ReportDto = {
@@ -501,11 +543,11 @@ export class AdminService {
         return total + sell.cart['total_price'];
       }, 0);
 
-      totalProfit = sells.reduce((sum, item) => {
-        if (item.cart && item.cart['subproducts']) {
-          const subproductProfit = item.cart['subproducts'].reduce(
-            (subSum, subitem) => {
-              return subSum + subitem.profit;
+      totalProfit = sells.reduce((sum, sell) => {
+        if (sell.cart && sell.cart['subproducts']) {
+          const subproductProfit = sell.cart['subproducts'].reduce(
+            (subSum: number, subproduct) => {
+              return subSum + (subproduct.profit || 0); // Add subproduct's profit, default to 0 if not present
             },
             0,
           );

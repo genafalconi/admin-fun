@@ -1,12 +1,13 @@
-import { Body, Controller, Put, Param, Get, Query } from '@nestjs/common';
+import { Body, Controller, Put, Param, Get, Query, UseGuards } from '@nestjs/common';
 import { OrderStatusDto, PaginatedData, UpdateProductDto, UpdateUserBuyDto } from 'src/dto/admin.dto';
 import { AdminAtomicService } from './admin.atomic.service';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { Product } from 'src/schemas/product.schema';
 import { Order } from 'src/schemas/order.schema';
-import { User } from 'src/schemas/user.schema';
 import { UserFullDataDto } from 'src/dto/populate.interface';
+import { FirebaseAuthGuard } from 'src/firebase/firebase.auth.guard';
 
+@UseGuards(FirebaseAuthGuard)
 @Controller('admin-atomic')
 export class AdminAtomicController {
   constructor(private readonly atomicService: AdminAtomicService) {}

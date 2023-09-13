@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import {
   BuyData,
@@ -18,8 +18,9 @@ import { User } from 'src/schemas/user.schema';
 import { LandingDto, LandingType } from 'src/dto/types.dto';
 import { Landing } from 'src/schemas/landing.schema';
 import { Subproduct } from 'src/schemas/subprod.schema';
-import { async } from 'rxjs';
+import { FirebaseAuthGuard } from 'src/firebase/firebase.auth.guard';
 
+@UseGuards(FirebaseAuthGuard)
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) { }
@@ -87,6 +88,11 @@ export class AdminController {
   @Get('/report-buys')
   async getBuysReport(@Query('date') date?: string): Promise<ReportDto> {
     return await this.adminService.getBuysReport(date);
+  }
+
+  @Get('/report-expenses')
+  async getExpensesReport(@Query('date') date?: string): Promise<ReportDto> {
+    return await this.adminService.getExpensesReport(date);
   }
 
   @Get('/report-sells')
