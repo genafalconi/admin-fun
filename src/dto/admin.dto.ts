@@ -103,7 +103,7 @@ export class PaginatedData {
 }
 
 export class ReportDto {
-  movements: Array<Order | Buy>;
+  movements: Array<Order | Buy | Expense>;
   total_import: number;
   month: string;
   total_profit?: number;
