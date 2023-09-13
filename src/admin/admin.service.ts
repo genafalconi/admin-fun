@@ -380,9 +380,7 @@ export class AdminService {
       has_name = true
     }
 
-    let totalProducts: number, products: Array<Product>, totalSubproducts: number
-
-    [products, totalProducts, totalSubproducts] = await Promise.all([
+    const [products, totalProducts, totalSubproducts] = await Promise.all([
       this.productModel
         .find(query)
         .select('_id name description image')
@@ -403,17 +401,18 @@ export class AdminService {
 
     const totalPages = Math.ceil(totalProducts / pageSize);
 
+    let totalSubs = totalSubproducts
     if (has_name) {
       let total: number = 0
       products.forEach((elem) => {
         total += elem.subproducts.length
       })
-      totalSubproducts = total
+      totalSubs = total
     }
 
     return {
       movements: products,
-      total_movements: totalSubproducts,
+      total_movements: totalSubs,
       page: page,
       total_pages: totalPages,
     };
