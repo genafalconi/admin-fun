@@ -380,7 +380,9 @@ export class AdminService {
       has_name = true
     }
 
-    let [products, totalProducts, totalSubproducts] = await Promise.all([
+    let totalProducts: number, products: Array<Product>, totalSubproducts: number
+
+    [products, totalProducts, totalSubproducts] = await Promise.all([
       this.productModel
         .find(query)
         .select('_id name description image')
