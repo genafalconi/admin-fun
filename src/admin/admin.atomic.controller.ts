@@ -1,5 +1,5 @@
 import { Body, Controller, Put, Param, Get, Query, UseGuards } from '@nestjs/common';
-import { OrderStatusDto, PaginatedData, UpdateProductDto, UpdateUserBuyDto } from 'src/dto/admin.dto';
+import { OrderStatusDto, UpdateProductDto, UpdateUserBuyDto } from 'src/dto/admin.dto';
 import { AdminAtomicService } from './admin.atomic.service';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { Product } from 'src/schemas/product.schema';

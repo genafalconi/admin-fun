@@ -1,4 +1,4 @@
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { SellData } from 'src/dto/admin.dto';
 import { Offer } from 'src/schemas/offers.schema';
 

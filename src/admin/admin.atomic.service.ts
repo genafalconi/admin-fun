@@ -4,7 +4,6 @@ import { Model, Types } from 'mongoose';
 import {
   OrderFullDetailPopulateOptions,
   OrderStatusDto,
-  PaginatedData,
   UpdateProductDto,
   UpdateUserBuyDto,
   UserPopulateOptions,
@@ -16,7 +15,7 @@ import { AdminService } from './admin.service';
 import { AnimalAgeDto, AnimalDto, AnimalSizeDto, BrandDto, CategoryDto } from 'src/dto/types.dto';
 import { User } from 'src/schemas/user.schema';
 import { Address } from 'src/schemas/address.schema';
-import { UserFullData, UserFullDataDto } from 'src/dto/populate.interface';
+import { UserFullDataDto } from 'src/dto/populate.interface';
 
 @Injectable()
 export class AdminAtomicService {
