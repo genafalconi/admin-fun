@@ -30,7 +30,7 @@ export class AdminAtomicController {
   async updateSubproduct(
     @Param('subprod_id') subprod_id: number,
     @Body() prodUpdate: UpdateProductDto,
-  ): Promise<Product> {
+  ): Promise<Subproduct> {
     return await this.atomicService.updateSubproduct(subprod_id, prodUpdate);
   }
 

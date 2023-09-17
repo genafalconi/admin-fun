@@ -55,7 +55,7 @@ export class AdminAtomicService {
   async updateSubproduct(
     subprod_id: number,
     productUpdate: UpdateProductDto,
-  ): Promise<any> {
+  ): Promise<Subproduct> {
     const [prod, subprod] = await Promise.all([
       this.productModel.findOneAndUpdate(
         { subproducts: { _id: new Types.ObjectId(subprod_id) } },

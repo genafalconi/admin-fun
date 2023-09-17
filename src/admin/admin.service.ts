@@ -387,7 +387,7 @@ export class AdminService {
         .populate({
           path: 'subproducts',
           model: 'Subproduct',
-          select: '_id buy_price sell_price size active stock highlight',
+          select: '_id buy_price sell_price size active stock highlight sale_price',
           options: { sort: { size: 1 } },
         })
         .sort({ name: 1 })
