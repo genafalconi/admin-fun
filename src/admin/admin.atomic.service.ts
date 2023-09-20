@@ -16,6 +16,7 @@ import { AnimalAgeDto, AnimalDto, AnimalSizeDto, BrandDto, CategoryDto } from 's
 import { User } from 'src/schemas/user.schema';
 import { Address } from 'src/schemas/address.schema';
 import { UserFullDataDto } from 'src/dto/populate.interface';
+import regexText from 'src/helpers/regexText';
 
 @Injectable()
 export class AdminAtomicService {
@@ -98,6 +99,14 @@ export class AdminAtomicService {
       .populate(OrderFullDetailPopulateOptions);
   }
 
+  async getProductBySearch(input: string): Promise<Product[]> {
+    const searchTerms = input.split(/\s+/).filter(Boolean);
+    const regexQueries = searchTerms.map((term) => ({
+      name: { $regex: new RegExp(regexText(term), 'i') }
+    }));
+    return await this.productModel.find({ $and: regexQueries })
+  }
+
   getTypesForProduct(): object {
     const categories: string[] = Object.keys(CategoryDto)
     const animals: string[] = Object.keys(AnimalDto)
@@ -160,4 +169,5 @@ export class AdminAtomicService {
 
     return userData;
   }
+
 }

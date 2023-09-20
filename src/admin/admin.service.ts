@@ -396,23 +396,14 @@ export class AdminService {
         .lean()
         .exec(),
       this.productModel.countDocuments(query).exec(),
-      this.subproductModel.countDocuments(query).exec()
+      this.subproductModel.countDocuments().exec()
     ]);
 
     const totalPages = Math.ceil(totalProducts / pageSize);
 
-    let totalSubs = totalSubproducts
-    if (has_name) {
-      let total: number = 0
-      products.forEach((elem) => {
-        total += elem.subproducts.length
-      })
-      totalSubs = total
-    }
-
     return {
       movements: products,
-      total_movements: totalSubs,
+      total_movements: totalSubproducts,
       page: page,
       total_pages: totalPages,
     };
@@ -785,6 +776,7 @@ export class AdminService {
         product: new Types.ObjectId(subprodData.product),
         buy_price: subprodData.buy_price,
         sell_price: subprodData.sell_price,
+        sale_price: subprodData.sale_price,
         size: subprodData.size,
         stock: subprodData.stock,
         animal: subprodData.animal,
@@ -802,7 +794,7 @@ export class AdminService {
         this.subproductModel.create(newSubproduct)
       ])
 
-      return subprodSaved
+      return subprodSaved.populate('product')
     } else {
       return existSubprod
     }

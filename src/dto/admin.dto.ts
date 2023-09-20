@@ -36,6 +36,7 @@ export class SubproductDataDto {
   product: string
   buy_price: number
   sell_price: number
+  sale_price: number
   size: number
   stock: number
   animal: AnimalDto
