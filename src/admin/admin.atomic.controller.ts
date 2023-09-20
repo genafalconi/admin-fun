@@ -47,6 +47,11 @@ export class AdminAtomicController {
     return await this.atomicService.getOrderDetails(orderId);
   }
 
+  @Get('/product')
+  async getProductSearch(@Query('input') input: string): Promise<Product[]> {
+    return await this.atomicService.getProductBySearch(input);
+  }
+
   @Get('/product-types')
   getProductTypes(): object {
     return this.atomicService.getTypesForProduct()

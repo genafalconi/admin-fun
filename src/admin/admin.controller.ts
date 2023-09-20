@@ -144,4 +144,5 @@ export class AdminController {
   async createSubproduct(@Body() subprodData: SubproductDataDto): Promise<Subproduct> {
     return await this.adminService.createSubprodToProd(subprodData)
   }
+
 }
