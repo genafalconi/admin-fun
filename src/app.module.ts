@@ -29,4 +29,4 @@ import { AdminModule } from './admin/admin.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
