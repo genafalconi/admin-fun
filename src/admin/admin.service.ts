@@ -716,12 +716,7 @@ export class AdminService {
     const dataForXLSX = productToExport.map(item => ({
       _id: item._id.toString(),
       active: item.active,
-      animal: item.animal,
-      animal_age: item.animal_age,
-      animal_size: item.animal_size,
-      brand: item.brand,
       buy_price: item.buy_price,
-      category: item.category,
       product_id: item.product?._id.toString(),
       product_name: item.product?.name,
       sell_price: item.sell_price,
@@ -778,12 +773,7 @@ export class AdminService {
         sell_price: subprodData.sell_price,
         sale_price: subprodData.sale_price,
         size: subprodData.size,
-        stock: subprodData.stock,
-        animal: subprodData.animal,
-        animal_age: subprodData.animal_age,
-        brand: subprodData.brand,
-        category: subprodData.category,
-        animal_size: subprodData.animal_size,
+        stock: subprodData.stock
       });
 
       const [updateProd, subprodSaved] = await Promise.all([
