@@ -4,6 +4,7 @@ import { Subproduct } from './subprod.schema';
 import {
   AnimalAgeDto,
   AnimalDto,
+  AnimalSizeDto,
   BrandDto,
   CategoryDto,
 } from '../dto/types.dto';
@@ -13,7 +14,7 @@ export class Product extends Document {
   @Prop({ required: false })
   name: string;
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'Subproduct' }], required: false, default: [] })
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Subproduct' }] })
   subproducts: Subproduct[];
 
   @Prop({ required: false })
@@ -28,16 +29,16 @@ export class Product extends Document {
   @Prop({ required: false })
   animal_age: AnimalAgeDto;
 
+  @Prop({ required: true })
+  animal_size: AnimalSizeDto;
+
   @Prop({ required: false })
   description: string;
-
-  @Prop({ required: false, default: false })
-  highlight: boolean;
 
   @Prop({ required: false })
   image: string;
 
-  @Prop({ required: false, default: true })
+  @Prop({ required: false })
   active: boolean;
 }
 
