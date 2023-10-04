@@ -125,8 +125,14 @@ export class UpdateUserBuyDto {
 }
 
 export class WeekDto {
-  start: Date | string;
-  end: Date | string;
+  start: string;
+  end: string;
+}
+
+export class UserRebuyDto {
+  _id: string;
+  full_name: string;
+  rebuydate: string;
 }
 
 export class DeliveryDto {

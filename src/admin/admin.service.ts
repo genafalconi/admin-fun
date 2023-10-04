@@ -18,6 +18,7 @@ import {
   SellPopulateOptions,
   SubproductDataDto,
   UserData,
+  UserRebuyDto,
   UserReportDto,
 } from 'src/dto/admin.dto';
 import { PopulateObject, UserFullData } from 'src/dto/populate.interface';
@@ -35,9 +36,12 @@ import { Order } from 'src/schemas/order.schema';
 import { Product } from 'src/schemas/product.schema';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { User } from 'src/schemas/user.schema';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class AdminService {
+  private dateTime: DateTime
+
   constructor(
     @InjectModel(Subproduct.name)
     private readonly subproductModel: Model<Subproduct>,
@@ -65,6 +69,7 @@ export class AdminService {
       api_key: process.env.API_KEY,
       api_secret: process.env.API_SECRET,
     });
+    this.dateTime = DateTime.now().setZone('America/Buenos_Aires');
   }
 
   async createClientSell(sellData: SellData): Promise<ResponseData> {
@@ -199,6 +204,40 @@ export class AdminService {
       week: { start: actualWeek.start, end: actualWeek.end },
       deliverys: ordersWithinWeek,
     };
+  }
+
+  async getRebuyUsersPerWeek(): Promise<any> {
+    const actualWeek = getStartAndEndOfWeek();
+    const users = await this.userModel
+      .find()
+      .populate(
+        {
+          path: 'orders',
+          model: 'Order',
+          select: '_id offer',
+          populate: {
+            path: 'offer',
+            model: 'Offer',
+            select: '_id date'
+          }
+        },
+      )
+      .select('_id orders full_name period_buy');
+
+    const finalUsers = []
+
+    for (let user of users) {
+      const datejs = DateTime.fromJSDate(user.orders[user.orders.length - 1]['offer']['date'])
+      const rebuyDate = datejs.plus({ days: user.period_buy }).startOf('day').toISODate()
+      // if (actualWeek.start <= rebuyDate && actualWeek.end >= rebuyDate) {
+      finalUsers.push({
+        _id: user._id,
+        full_name: user.full_name,
+        rebuydate: rebuyDate
+      })
+      // }
+    }
+    return finalUsers
   }
 
   async createBuyProducts(buyData: BuyData): Promise<ResponseData> {

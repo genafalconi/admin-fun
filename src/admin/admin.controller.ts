@@ -11,6 +11,7 @@ import {
   SellData,
   SubproductDataDto,
   UserData,
+  UserRebuyDto,
   UserReportDto,
 } from 'src/dto/admin.dto';
 import { Product } from 'src/schemas/product.schema';
@@ -58,6 +59,11 @@ export class AdminController {
   @Get('/delivery-orders')
   async getDeliveryOrders(): Promise<DeliveryDto> {
     return await this.adminService.getDeliveryOrders();
+  }
+
+  @Get('/users-week')
+  async getUsersRebuyByWeek(): Promise<UserRebuyDto[]> {
+    return await this.adminService.getRebuyUsersPerWeek()
   }
 
   @Get('/orders')
@@ -127,7 +133,7 @@ export class AdminController {
 
   @Get('/subprod/:subprod_id')
   async getSubproductDetails(@Param('subprod_id') subprod: string): Promise<Subproduct> {
-    return await this.adminService.getSubproduct(subprod) 
+    return await this.adminService.getSubproduct(subprod)
   }
 
   @Get('/products-excel')
