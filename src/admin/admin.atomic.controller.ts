@@ -10,7 +10,7 @@ import { FirebaseAuthGuard } from 'src/firebase/firebase.auth.guard';
 @UseGuards(FirebaseAuthGuard)
 @Controller('admin-atomic')
 export class AdminAtomicController {
-  constructor(private readonly atomicService: AdminAtomicService) {}
+  constructor(private readonly atomicService: AdminAtomicService) { }
 
   @Put('/active-change/:subprod_id')
   async changeActiveSubproduct(
