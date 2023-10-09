@@ -40,7 +40,8 @@ export enum BrandDto {
   BIOPET = 'BIOPET',
   UNIK = 'UNIK',
   OPTIMUM = 'OPTIMUM',
-  DOG_CHOW = 'DOG CHOW'
+  DOG_CHOW = 'DOG CHOW',
+  POWER = 'POWER'
 }
 
 export enum StatusOrder {
