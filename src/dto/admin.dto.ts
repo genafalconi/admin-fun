@@ -28,6 +28,7 @@ export class ProductDataDto {
   description: string
   animal: AnimalDto
   animal_age: AnimalAgeDto
+  animal_size: AnimalSizeDto
   brand: BrandDto
   category: CategoryDto
 }
@@ -39,11 +40,6 @@ export class SubproductDataDto {
   sale_price: number
   size: number
   stock: number
-  animal: AnimalDto
-  animal_age: AnimalAgeDto
-  brand: BrandDto
-  category: CategoryDto
-  animal_size: AnimalSizeDto
 }
 
 export class BuyData {
@@ -74,6 +70,7 @@ export class UserData {
   name: string;
   phone: string;
   address: AddressData;
+  firebase_id: string;
 }
 
 export class AddressData {

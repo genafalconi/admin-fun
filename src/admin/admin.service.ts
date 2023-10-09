@@ -326,17 +326,24 @@ export class AdminService {
       extra: userData.address.extra,
     });
 
+    const addressCreated = await this.addressModel.create(newAddress)
+
     const newUser = new this.userModel({
       email: userData.email,
       full_name: userData.name,
       phone: userData.phone,
-      addresses: [new Types.ObjectId(newAddress._id)],
+      addresses: [new Types.ObjectId(addressCreated._id)],
+      firebase_id: userData.firebase_id,
+      provider_login: 'password'
     });
 
-    const [createAddress, addressSaved, userSaved] = await Promise.all([
-      await this.addressModel.create(newAddress),
-      await this.userModel.create(newUser),
-      await this.userModel.findById(newUser._id),
+    const [userSaved, userWithAddress] = await Promise.all([
+      this.userModel.create(newUser),
+      this.addressModel.findByIdAndUpdate(
+        new Types.ObjectId(addressCreated._id),
+        { $set: { user: new Types.ObjectId(newUser._id) } },
+        { new: true }
+      )
     ]);
 
     if (userSaved) {
@@ -788,12 +795,15 @@ export class AdminService {
     if (!existProd) {
       const newProduct: Product = new this.productModel({
         name: productData.name,
+        active: true,
         image: productData.image,
         animal: productData.animal,
         animal_age: productData.animal_age,
+        animal_size: productData.animal_size,
         brand: productData.brand,
         category: productData.category,
-        description: productData.description
+        description: productData.description,
+        subproducts: []
       })
       const prodSaved: Product = await this.productModel.create(newProduct)
 
@@ -812,7 +822,10 @@ export class AdminService {
         sell_price: subprodData.sell_price,
         sale_price: subprodData.sale_price,
         size: subprodData.size,
-        stock: subprodData.stock
+        stock: subprodData.stock,
+        active: true,
+        highlight: false,
+        has_lock: false
       });
 
       const [updateProd, subprodSaved] = await Promise.all([
