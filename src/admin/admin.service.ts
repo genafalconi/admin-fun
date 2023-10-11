@@ -37,6 +37,8 @@ import { Product } from 'src/schemas/product.schema';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { User } from 'src/schemas/user.schema';
 import { DateTime } from 'luxon';
+import createSubproductBought from 'src/helpers/createSubproductBought';
+import { SubproductBought } from 'src/schemas/subprodsBought.schema';
 
 @Injectable()
 export class AdminService {
@@ -62,7 +64,9 @@ export class AdminService {
     @InjectModel(Expense.name)
     private readonly expenseModel: Model<Expense>,
     @InjectModel(Landing.name)
-    private readonly landingModel: Model<Landing>
+    private readonly landingModel: Model<Landing>,
+    @InjectModel(SubproductBought.name)
+    private readonly subproductBoughtModel: Model<SubproductBought>
   ) {
     cloudinary.config({
       cloud_name: process.env.CLOUD_NAME,
@@ -78,12 +82,13 @@ export class AdminService {
       data: '',
     };
 
-    const cartSell = convertSellDataToCart(sellData, this.cartModel);
+    const cartSell = await convertSellDataToCart(sellData, this.cartModel);
     const offerSell = await convertSellDataToOffer(sellData, this.offerModel);
 
-    const [savedCart, savedOffer] = await Promise.all([
+    const [savedCart, savedOffer, savedSubprods] = await Promise.all([
       this.cartModel.create(cartSell),
       this.offerModel.create(offerSell),
+      createSubproductBought(cartSell, this.subproductBoughtModel)
     ]);
 
     const newSell = new this.orderModel({
@@ -95,23 +100,24 @@ export class AdminService {
       ecommerce: false,
     });
 
-    const [createSell, userUpdate, sellSaved] = await Promise.all([
-      await this.orderModel.create(newSell),
-      await this.userModel.updateOne(
+    const [createSell, userUpdate] = await Promise.all([
+      (await this.orderModel.create(newSell)).populate(OrderPopulateOptions),
+      this.userModel.updateOne(
         { _id: sellData.user },
         { $push: { orders: newSell._id } },
-      ),
-      await this.orderModel
-        .findOne({ _id: newSell })
-        .populate(OrderPopulateOptions),
+      )
     ]);
 
-    if (sellSaved) {
+    if (createSell) {
       response.success = true;
-      response.data = sellSaved;
+      response.data = createSell;
     }
 
     return response;
+  }
+
+  async updateStock() {
+    return await this.subproductModel.updateMany({}, { $set: { stock: 100 } }, { new: true })
   }
 
   async getProductsMovementSearch(input: string): Promise<Product[]> {
@@ -121,7 +127,7 @@ export class AdminService {
         .populate({
           path: 'subproducts',
           options: { sort: { size: 1 } },
-          select: '_id sell_price buy_price size stock',
+          select: '_id sell_price buy_price sale_price size stock',
         })
         .select('_id name subproducts')
         .sort({ name: 1 })

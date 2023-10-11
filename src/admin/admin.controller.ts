@@ -151,4 +151,9 @@ export class AdminController {
     return await this.adminService.createSubprodToProd(subprodData)
   }
 
+  @Get('/stock')
+  async updateStock() {
+    return await this.adminService.updateStock()
+  }
+
 }

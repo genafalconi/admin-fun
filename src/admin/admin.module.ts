@@ -15,6 +15,7 @@ import { AdminAtomicController } from './admin.atomic.controller';
 import { AdminAtomicService } from './admin.atomic.service';
 import { Expense, ExpenseSchema } from 'src/schemas/expense.schema';
 import { Landing, LandingSchema } from 'src/schemas/landing.schema';
+import { SubproductBought, SubproductBoughtSchema } from 'src/schemas/subprodsBought.schema';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { Landing, LandingSchema } from 'src/schemas/landing.schema';
       { name: Order.name, schema: OrderSchema },
       { name: Buy.name, schema: BuySchema },
       { name: Expense.name, schema: ExpenseSchema },
-      { name: Landing.name, schema: LandingSchema }
+      { name: Landing.name, schema: LandingSchema },
+      { name: SubproductBought.name, schema: SubproductBoughtSchema }
     ]),
   ],
   controllers: [AdminController, AdminAtomicController],
