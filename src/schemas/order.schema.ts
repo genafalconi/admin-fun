@@ -1,23 +1,31 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { PaymentType, StatusOrder } from '../dto/types.dto';
+import { StatusOrder } from 'src/dto/types.dto';
+import { Address } from './address.schema';
+import { Cart } from './cart.schema';
+import { Offer } from './offers.schema';
+import { User } from './user.schema';
+import { SubproductBought } from './subprodsBought.schema';
 
 @Schema({ timestamps: true })
 export class Order extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
-  user: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  user: User;
 
-  @Prop({ type: Types.ObjectId, ref: 'Cart', required: false })
-  cart: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Cart' })
+  cart: Cart;
 
-  @Prop({ type: Types.ObjectId, ref: 'Address', required: false })
-  address: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'SubproductBought' })
+  products: SubproductBought[]
 
-  @Prop({ type: Types.ObjectId, ref: 'Offer', required: false })
-  offer: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Address' })
+  address: Address;
+
+  @Prop({ type: Types.ObjectId, ref: 'Offer' })
+  offer: Offer;
 
   @Prop({ required: true })
-  payment_type: PaymentType;
+  payment_type: string;
 
   @Prop({ default: false })
   message_sent: boolean;

@@ -14,7 +14,7 @@ export async function convertSellDataToOffer(
   }
 
   return new offerModel({
-    date: new Date().toISOString().slice(0, 10),
+    date: sellData.date,
     from: 14,
     to: 20,
     open: true,
