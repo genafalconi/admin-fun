@@ -7,6 +7,7 @@ export interface PopulateObject {
   model: string;
   select?: string;
   populate?: PopulateObject | PopulateObject[];
+  options?: any
 }
 
 export interface UserFullData extends User {

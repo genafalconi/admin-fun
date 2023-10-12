@@ -10,6 +10,7 @@ import {
   DeliveryPopulateOptions,
   ExpenseData,
   OrderPopulateOptions,
+  OrderStatusDto,
   PaginatedData,
   ProductDataDto,
   ReportDto,
@@ -95,6 +96,7 @@ export class AdminService {
       user: new Types.ObjectId(sellData.user),
       cart: new Types.ObjectId(savedCart._id),
       address: new Types.ObjectId(sellData.address_id),
+      products: savedSubprods.map((elem) => new Types.ObjectId(elem._id)),
       offer: new Types.ObjectId(offerSell._id),
       payment_type: sellData.payment_type,
       ecommerce: false,
@@ -117,7 +119,8 @@ export class AdminService {
   }
 
   async updateStock() {
-    return await this.subproductModel.updateMany({}, { $set: { stock: 100 } }, { new: true })
+    await this.subproductModel.updateMany({}, { $set: { stock: 100 } }, { new: true })
+    await this.orderModel.updateMany({}, { $set: { status: OrderStatusDto.DELIVERED } }, { new: true })
   }
 
   async getProductsMovementSearch(input: string): Promise<Product[]> {
@@ -164,7 +167,7 @@ export class AdminService {
       model
         .find(query)
         .populate(populates)
-        .sort({ date: -1 })
+        .sort({ 'updatedAt': -1 })
         .skip(skip)
         .limit(movementsPerPage)
         .lean()
@@ -204,7 +207,10 @@ export class AdminService {
 
     const ordersWithinWeek = await this.orderModel
       .find({ offer: { $in: offerIds } })
-      .populate(DeliveryPopulateOptions);
+      .populate(DeliveryPopulateOptions)
+      .lean()
+
+    ordersWithinWeek.sort((a, b) => new Date(a.offer.date).getTime() - new Date(b.offer.date).getTime());
 
     return {
       week: { start: actualWeek.start, end: actualWeek.end },
@@ -616,9 +622,15 @@ export class AdminService {
     return parseFloat(roundedMargin.toFixed(2));
   }
 
-  async getUsersReport() {
+  async getUsersReport(date: string) {
+    let query = {}
+    if (date) {
+      const { start, end } = this.getDatesFormatted(date);
+      query = { createdAt: { $gte: start, $lt: end } };
+    }
+
     const users = await this.userModel
-      .find()
+      .find(query)
       .select('_id full_name')
       .populate({
         path: 'orders',
