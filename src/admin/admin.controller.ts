@@ -107,8 +107,8 @@ export class AdminController {
   }
 
   @Get('/report-users')
-  async getUserReport(): Promise<UserReportDto[]> {
-    return await this.adminService.getUsersReport();
+  async getUserReport(@Query('date') date?: string): Promise<UserReportDto[]> {
+    return await this.adminService.getUsersReport(date);
   }
 
   @Get('/product-search')

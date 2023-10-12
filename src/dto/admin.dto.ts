@@ -171,22 +171,27 @@ export const OrderPopulateOptions: Array<PopulateObject> = [
   {
     path: 'offer',
     model: 'Offer',
-    select: '_id date weekday',
+    select: '_id date weekday'
   },
   {
-    path: 'cart',
-    model: 'Cart',
-    select: '_id subproducts total_price',
+    path: 'products',
+    model: 'SubproductBought',
+    select: '_id subproduct buy_date buy_price sell_price sale_price quantity highlight',
     populate: {
-      path: 'subproducts.subproduct',
+      path: 'subproduct',
       model: 'Subproduct',
-      select: '_id product sell_price buy_price size',
+      select: '_id product size',
       populate: {
         path: 'product',
         model: 'Product',
         select: '_id name image',
       },
     },
+  },
+  {
+    path: 'cart',
+    model: 'Cart',
+    select: '_id total_price'
   },
 ];
 
