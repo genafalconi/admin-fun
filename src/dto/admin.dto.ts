@@ -108,6 +108,13 @@ export class ReportDto {
   percentage?: number;
 }
 
+export class FullReportDto {
+  buys: ReportDto;
+  sells: ReportDto;
+  expenses: ReportDto;
+  users: UserReportDto[];
+}
+
 export class UserReportDto {
   _id: string;
   name: string;
