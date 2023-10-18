@@ -4,15 +4,14 @@ import {
   BuyData,
   DeliveryDto,
   ExpenseData,
+  FullReportDto,
   PaginatedData,
   ProductDataDto,
-  ReportDto,
   ResponseData,
   SellData,
   SubproductDataDto,
   UserData,
   UserRebuyDto,
-  UserReportDto,
 } from 'src/dto/admin.dto';
 import { Product } from 'src/schemas/product.schema';
 import { User } from 'src/schemas/user.schema';
@@ -91,24 +90,9 @@ export class AdminController {
     return await this.adminService.getPaginatedExpenses(parseInt(page));
   }
 
-  @Get('/report-buys')
-  async getBuysReport(@Query('date') date?: string): Promise<ReportDto> {
-    return await this.adminService.getBuysReport(date);
-  }
-
-  @Get('/report-expenses')
-  async getExpensesReport(@Query('date') date?: string): Promise<ReportDto> {
-    return await this.adminService.getExpensesReport(date);
-  }
-
-  @Get('/report-sells')
-  async getSellsReport(@Query('date') date?: string): Promise<ReportDto> {
-    return await this.adminService.getSellsReport(date);
-  }
-
-  @Get('/report-users')
-  async getUserReport(@Query('date') date?: string): Promise<UserReportDto[]> {
-    return await this.adminService.getUsersReport(date);
+  @Get('/reports')
+  async getReports(@Query('date') date?: string): Promise<FullReportDto> {
+    return await this.adminService.getFullReports(date);
   }
 
   @Get('/product-search')

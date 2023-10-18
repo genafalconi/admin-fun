@@ -119,8 +119,17 @@ export class AdminService {
   }
 
   async updateStock() {
-    await this.subproductModel.updateMany({}, { $set: { stock: 100 } }, { new: true })
-    await this.orderModel.updateMany({}, { $set: { status: OrderStatusDto.DELIVERED } }, { new: true })
+    // await this.subproductModel.updateMany({}, { $set: { stock: 100 } }, { new: true })
+    // await this.orderModel.updateMany({}, { $set: { status: OrderStatusDto.DELIVERED } }, { new: true })
+    const sells = await this.orderModel.find().populate(OrderPopulateOptions)
+    let prof = 0
+    for (let sell of sells) {
+      sell.products.forEach((elem) => {
+        const price = elem.highlight ? elem.sale_price : elem.sell_price
+        prof += (price - elem.buy_price) * elem.quantity
+      })
+    }
+    return prof
   }
 
   async getProductsMovementSearch(input: string): Promise<Product[]> {
@@ -506,6 +515,17 @@ export class AdminService {
     return formattedDate;
   }
 
+  async getFullReports(date?: string) {
+    const [buys, sells, expenses, users] = await Promise.all([
+      this.getBuysReport(date),
+      this.getSellsReport(date),
+      this.getExpensesReport(date),
+      this.getUsersReport(date)
+    ])
+
+    return { buys, sells, expenses, users }
+  }
+
   async getBuysReport(date?: string) {
     let query = null;
     const responseReport: ReportDto = {
@@ -611,7 +631,7 @@ export class AdminService {
     responseReport.total_import = totalSells;
     responseReport.month = responseReport.month ? responseReport.month : 'All';
     responseReport.total_profit = totalProfit;
-    responseReport.percentage = this.calculateMargin(totalProfit, totalSells);
+    // responseReport.percentage = this.calculateMargin(totalProfit, totalSells);
 
     return responseReport;
   }
@@ -708,13 +728,14 @@ export class AdminService {
       description: expenseData.description
     })
 
-    const [created, expenses] = await Promise.all([
-      this.expenseModel.create(newExpense),
-      this.expenseModel.find()
+    const [created] = await Promise.all([
+      this.expenseModel.create(newExpense)
     ])
 
-    response.data = expenses
-    if (created) response.success = true
+    if (created) {
+      response.success = true
+      response.data = created
+    }
 
     return response
   }
