@@ -196,7 +196,7 @@ export class AdminService {
       model
         .find(query)
         .populate(populates)
-        .sort({ 'updatedAt': -1 })
+        .sort({ 'createdAt': -1 })
         .skip(skip)
         .limit(movementsPerPage)
         .lean()
