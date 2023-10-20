@@ -113,6 +113,8 @@ export class FullReportDto {
   sells: ReportDto;
   expenses: ReportDto;
   users: UserReportDto[];
+  stock: StockReportDto[];
+  cashflow: CashFlowReportDto;
 }
 
 export class UserReportDto {
@@ -126,6 +128,18 @@ export class UserReportDto {
 export class UpdateUserBuyDto {
   user: string;
   next_buy: number;
+}
+
+export class CashFlowReportDto {
+  cash: number;
+  bank: number;
+  month: string;
+}
+
+export class StockReportDto {
+  product: string;
+  buy_price: number;
+  quantity: number;
 }
 
 export class WeekDto {
@@ -293,4 +307,26 @@ export const DeliveryPopulateOptions: Array<PopulateObject> = [
     model: 'Address',
     select: '_id street number city flat floor extra',
   },
+];
+
+
+export const CashFlowPopulateOptions: Array<PopulateObject> = [
+  {
+    path: 'cart',
+    model: 'Cart',
+    select: '_id total_price',
+  },
+  {
+    path: 'products',
+    model: 'SubproductBought',
+    select: '_id buy_date buy_price sell_price sale_price quantity highlight',
+  }
+];
+
+export const StockPopulateOptionsArray: Array<PopulateObject> = [
+  {
+    path: 'product',
+    model: 'Product',
+    select: '_id name',
+  }
 ];

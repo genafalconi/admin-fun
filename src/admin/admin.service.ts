@@ -6,9 +6,12 @@ import { Model, Types } from 'mongoose';
 import {
   BuyData,
   BuyPopulateOptions,
+  CashFlowPopulateOptions,
+  CashFlowReportDto,
   DeliveryDto,
   DeliveryPopulateOptions,
   ExpenseData,
+  FullReportDto,
   OrderPopulateOptions,
   OrderStatusDto,
   PaginatedData,
@@ -17,13 +20,15 @@ import {
   ResponseData,
   SellData,
   SellPopulateOptions,
+  StockPopulateOptionsArray,
+  StockReportDto,
   SubproductDataDto,
   UserData,
   UserRebuyDto,
   UserReportDto,
 } from 'src/dto/admin.dto';
 import { PopulateObject, UserFullData } from 'src/dto/populate.interface';
-import { LandingDto, LandingType } from 'src/dto/types.dto';
+import { LandingDto, LandingType, PaymentType } from 'src/dto/types.dto';
 import getStartAndEndOfWeek from 'src/helpers/actualWeekByDate';
 import { convertSellDataToCart } from 'src/helpers/convertToCart';
 import { convertSellDataToOffer } from 'src/helpers/convertToOffer';
@@ -102,12 +107,13 @@ export class AdminService {
       ecommerce: false,
     });
 
-    const [createSell, userUpdate] = await Promise.all([
+    const [createSell, userUpdate, updateStock] = await Promise.all([
       (await this.orderModel.create(newSell)).populate(OrderPopulateOptions),
       this.userModel.updateOne(
         { _id: sellData.user },
         { $push: { orders: newSell._id } },
-      )
+      ),
+      this.updateBoughtSubproducts(cartSell)
     ]);
 
     if (createSell) {
@@ -118,18 +124,32 @@ export class AdminService {
     return response;
   }
 
+  async updateBoughtSubproducts(cart: Cart): Promise<void> {
+    for (let sub of cart.subproducts) {
+      const currentSubprod = await this.subproductModel.findById(
+        new Types.ObjectId(sub.subproduct._id)
+      );
+      const newStock = currentSubprod.stock - sub.quantity;
+      await this.subproductModel.findByIdAndUpdate(
+        sub.subproduct._id,
+        { $set: { stock: newStock } },
+        { new: true },
+      );
+    }
+  }
+
   async updateStock() {
     // await this.subproductModel.updateMany({}, { $set: { stock: 100 } }, { new: true })
-    // await this.orderModel.updateMany({}, { $set: { status: OrderStatusDto.DELIVERED } }, { new: true })
-    const sells = await this.orderModel.find().populate(OrderPopulateOptions)
-    let prof = 0
-    for (let sell of sells) {
-      sell.products.forEach((elem) => {
-        const price = elem.highlight ? elem.sale_price : elem.sell_price
-        prof += (price - elem.buy_price) * elem.quantity
-      })
-    }
-    return prof
+    await this.orderModel.updateMany({}, { $set: { status: OrderStatusDto.DELIVERED } }, { new: true })
+    // const sells = await this.orderModel.find().populate(OrderPopulateOptions)
+    // let prof = 0
+    // for (let sell of sells) {
+    //   sell.products.forEach((elem) => {
+    //     const price = elem.highlight ? elem.sale_price : elem.sell_price
+    //     prof += (price - elem.buy_price) * elem.quantity
+    //   })
+    // }
+    // return prof
   }
 
   async getProductsMovementSearch(input: string): Promise<Product[]> {
@@ -176,7 +196,7 @@ export class AdminService {
       model
         .find(query)
         .populate(populates)
-        .sort({ 'updatedAt': -1 })
+        .sort({ 'createdAt': -1 })
         .skip(skip)
         .limit(movementsPerPage)
         .lean()
@@ -515,23 +535,76 @@ export class AdminService {
     return formattedDate;
   }
 
-  async getFullReports(date?: string) {
-    const [buys, sells, expenses, users] = await Promise.all([
+  async getFullReports(date?: string): Promise<FullReportDto> {
+    const [buys, sells, expenses, users, cashflow, stock] = await Promise.all([
       this.getBuysReport(date),
       this.getSellsReport(date),
       this.getExpensesReport(date),
-      this.getUsersReport(date)
+      this.getUsersReport(date),
+      this.getCashFlowReport(date),
+      this.getStockReport()
     ])
 
-    return { buys, sells, expenses, users }
+    return { buys, sells, expenses, users, cashflow, stock }
   }
 
-  async getBuysReport(date?: string) {
+  async getCashFlowReport(date?: string): Promise<CashFlowReportDto> {
+    const cashflowDto: CashFlowReportDto = {
+      cash: 0,
+      bank: 0,
+      month: ''
+    };
+
+    let query: any = { status: OrderStatusDto.DELIVERED };
+    if (date) {
+      const { start, end, monthName } = this.getDatesFormatted(date);
+      cashflowDto.month = monthName;
+      query = { ...query, createdAt: { $gte: start, $lt: end } };
+    }
+
+    const orders = await this.orderModel
+      .find(query)
+      .populate(CashFlowPopulateOptions)
+      .select('_id cart payment_type');
+
+    for (const order of orders) {
+      const totalToSum = order.cart.total_price - order.products.reduce((total, prod) => total + prod.buy_price * prod.quantity, 0);
+
+      if (order.payment_type === PaymentType.CASH) {
+        cashflowDto.cash += totalToSum;
+      } else {
+        cashflowDto.bank += totalToSum;
+      }
+    }
+
+    return cashflowDto;
+  }
+
+  async getStockReport(): Promise<Array<StockReportDto>> {
+    const stockDto: Array<StockReportDto> = []
+
+    const products = await this.subproductModel
+      .find({ stock: { $gt: 100 } })
+      .populate(StockPopulateOptionsArray)
+      .select('_id product buy_price stock size');
+
+    for (const prod of products) {
+      stockDto.push({
+        product: `${prod.product.name} ${prod.size}kg`,
+        buy_price: prod.buy_price,
+        quantity: prod.stock - 100
+      })
+    }
+
+    return stockDto;
+  }
+
+  async getBuysReport(date?: string): Promise<ReportDto> {
     let query = null;
     const responseReport: ReportDto = {
       movements: [],
       total_import: 0,
-      month: '',
+      month: ''
     };
 
     if (date) {
@@ -555,7 +628,7 @@ export class AdminService {
     return responseReport;
   }
 
-  async getExpensesReport(date?: string) {
+  async getExpensesReport(date?: string): Promise<ReportDto> {
     let query = null;
     const responseReport: ReportDto = {
       movements: [],
@@ -651,7 +724,6 @@ export class AdminService {
 
     const users = await this.userModel
       .find(query)
-      .select('_id full_name')
       .populate({
         path: 'orders',
         model: 'Order',
@@ -680,30 +752,16 @@ export class AdminService {
           ? new Date(user.orders[user.orders.length - 1]['offer'].date)
           : null;
 
-      let meanDifference = null;
-      if (user.orders.length > 1) {
-        const dateDifferences = user.orders.map((order, index) => {
-          if (index > 0) {
-            const current = new Date(order['offer']['date']);
-            const previous = new Date(user.orders[index - 1]['offer']['date']);
-            return current.getTime() - previous.getTime();
-          }
-          return 0;
-        });
-        const sumDifferences = dateDifferences.reduce(
-          (sum, diff) => sum + diff,
-          0,
-        );
-        const meanMilliseconds = sumDifferences / (user.orders.length - 1);
-        meanDifference = new Date(lastBuy.getTime() + meanMilliseconds);
-      } else if (lastBuy) {
-        meanDifference = new Date(lastBuy.getTime() + 30 * 24 * 60 * 60 * 1000);
+      let rebuyDate = null
+      if (lastBuy) {
+        const lastBuyDateTime = DateTime.fromJSDate(lastBuy).setZone('America/Buenos_Aires');
+        rebuyDate = lastBuyDateTime.plus({ days: user.period_buy }).toJSDate();
       }
 
       const userReport: UserReportDto = {
         _id: user._id,
         name: user.full_name,
-        re_buy: meanDifference,
+        re_buy: rebuyDate,
         total_buys: totalBuys,
         last_buy: lastBuy,
       };
@@ -711,7 +769,7 @@ export class AdminService {
       return userReport;
     });
 
-    userReports.sort((a, b) => b.re_buy?.getTime() - a.re_buy?.getTime());
+    userReports.sort((a, b) => a.re_buy?.getTime() - b.re_buy?.getTime());
 
     return userReports;
   }
